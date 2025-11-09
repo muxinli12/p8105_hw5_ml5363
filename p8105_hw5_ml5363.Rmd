@@ -1,0 +1,12 @@
+---
+title: "p8105_hw5_ml5363"
+author: "Muxin Li"
+date: "2025-11-09"
+output: github_document
+---
+
+## Problem 1
+```{r}
+
+```
+
