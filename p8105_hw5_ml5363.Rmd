@@ -94,11 +94,12 @@ ggplot(mean_sim_result,aes(x=mean_value,y=prop))+
   geom_point()+
   geom_line()+
   scale_x_continuous(breaks = 0:6, labels = 0:6, minor_breaks = NULL)
+```
+comment:
+There is a positive association between effect size (x-axis, mean_value) and statistical power (y-axis, proportion).
+As the effect size increases, the power also increases — at first gradually, then more steeply — until it reaches close to 1.0, where it plateaus
 
-
-
-
-
+```{r}
 
 ```
 
