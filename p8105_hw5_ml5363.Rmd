@@ -5,8 +5,96 @@ date: "2025-11-09"
 output: github_document
 ---
 
+```{r}
+library(tidyverse)
+library(broom)
+```
+
 ## Problem 1
 ```{r}
+bdays_df=function(n_room){
+  bdays=sample(1:365,n_room,replace = TRUE)
+  repeat_bdays=length(unique(bdays))< n_room
+  repeat_bdays
+}
+```
+
+```{r}
+bdays_sim=
+  expand_grid(
+    bdays=2:50,
+    iter=1:10000
+  )|>
+  mutate(result=map_lgl(bdays,bdays_df))|>
+  group_by(bdays)|>
+  summarise(
+    pro_bday=mean(result)
+  )
+  
+  
+```
+
+```{r}
+bdays_sim|>
+  ggplot(aes(x=bdays,y=pro_bday))+
+  geom_point()+
+  geom_line()
+```
+comment:
+
+## Problem 2
+```{r}
+sim_mean=function(mean){
+  x=rnorm(30,mean,5)
+  t_result=t.test(x,mu=0)
+  tidy(t_result)
+}
+output=vector("list",5000)
+for (i in 1:5000) {
+  output[[i]]=sim_mean(0)
+}
+sim_result=bind_rows(output)
+sim_result|>
+  select(estimate,p.value)
+```
+
+for mean=1,2,3,4,5,6
+```{r}
+mean_df=function(mean){
+  output=vector("list",5000)
+  for (i in 1:5000) {
+    output[[i]]=sim_mean(mean)
+  }
+  sim_result=bind_rows(output)
+  sim_result|>
+    select(estimate,p.value)
+}
+mean_df(1)
+mean_df(2)
+mean_df(3)
+mean_df(4)
+mean_df(5)
+mean_df(6)
+
+mean_sim_df=function(mean){
+  mean_df(mean)|>
+  filter(p.value<0.05)|>
+  mutate(mean_value=mean)|>
+  mutate(prop=n()/5000)|>
+  distinct(mean_value,prop)
+}
+
+output=vector("list",7)
+for (i in 1:7) {
+  output[[i]]=mean_sim_df(i-1)
+}
+mean_sim_result= bind_rows(output)
+
+
+
+
+
+
 
 ```
 
