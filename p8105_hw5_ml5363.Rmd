@@ -161,6 +161,7 @@ homicides_city|>
   mutate(unsolved_homicides=`Closed without arrest` + `Open/No arrest`)|>
   mutate(prop=unsolved_homicides/total_homicides)
 
+Baltimore_MD =prop.test(1825,2827)
 
 prop.test(1825,2827)|>
   tidy()|>
