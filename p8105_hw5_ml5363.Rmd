@@ -8,6 +8,8 @@ output: github_document
 ```{r}
 library(tidyverse)
 library(broom)
+library(purrr)
+
 ```
 
 ## Problem 1
@@ -41,6 +43,7 @@ bdays_sim|>
   geom_line()
 ```
 comment:
+The probability that at least two people share a birthday increases rapidly as the group size grows. When the group size reaches around 23 people, the probability exceeds 50%, meaning it is more likely than not that two people will share a birthday. By the time the group size reaches 50, the probability is nearly 1.
 
 ## Problem 2
 ```{r}
@@ -69,12 +72,6 @@ mean_df=function(mean){
   sim_result|>
     select(estimate,p.value)
 }
-mean_df(1)
-mean_df(2)
-mean_df(3)
-mean_df(4)
-mean_df(5)
-mean_df(6)
 
 mean_sim_df=function(mean){
   mean_df(mean)|>
@@ -93,6 +90,7 @@ mean_sim_result= bind_rows(output)
 ggplot(mean_sim_result,aes(x=mean_value,y=prop))+
   geom_point()+
   geom_line()+
+  geom_text(aes(label = sprintf("%.4f", prop), vjust = -1)) +
   scale_x_continuous(breaks = 0:6, labels = 0:6, minor_breaks = NULL)
 ```
 comment:
@@ -100,6 +98,114 @@ There is a positive association between effect size (x-axis, mean_value) and sta
 As the effect size increases, the power also increases — at first gradually, then more steeply — until it reaches close to 1.0, where it plateaus
 
 ```{r}
+mean_sim_df2=function(mean){
+  mean_df(mean)|>
+  filter(p.value<0.05)|>
+  summarize(mean_value=mean, mean_estimate=mean(estimate))
+}
 
+output2=vector("list",7)
+for (i in 1:7) {
+  output2[[i]]=mean_sim_df2(i-1)
+}
+mean_sim_result2= bind_rows(output2)
+ggplot(mean_sim_result2,aes(x=mean_value,y=mean_estimate))+
+  geom_point()+
+  geom_line()+
+  geom_text(aes(label = sprintf("%.4f", mean_estimate), vjust = -1)) +
+  scale_x_continuous(breaks = 0:6, labels = 0:6, minor_breaks = NULL)
+  
+```
+comment:
+Across all samples,$\hat{\mu}$ is an unbiased estimator of $\mu$, so the average estimate is close to the true mean (as plot shows)
+
+## Problem 3
+```{r}
+url = "https://raw.githubusercontent.com/washingtonpost/data-homicides/refs/heads/master/homicide-data.csv"
+homicides=read_csv(url)
+```
+comment:
+The dataset is a tibble containing 52,179 rows and 12 columns, representing homicide records compiled by The Washington Post from police departments across the United States.
+
+```{r}
+homicides_city=
+  homicides|>
+  mutate(city_state=paste(city,state,sep = ","))
+
+
+homicides_city|>
+  drop_na(disposition)|>
+  group_by(city,disposition)|>
+  summarise(n=n())|>
+  pivot_wider(
+    names_from = disposition,
+    values_from = n,
+    values_fill = 0
+  )|>
+  mutate(total_homicides=`Closed by arrest` + `Closed without arrest` + `Open/No arrest`)|>
+  mutate(unsolved_homicides=`Closed without arrest` + `Open/No arrest`)|>
+  select(city,total_homicides,unsolved_homicides)
+```
+
+```{r}
+homicides_city|>
+  drop_na(disposition)|>
+  filter(city_state=="Baltimore,MD")|>
+  group_by(city_state,disposition)|>
+  summarise(n=n())|>
+  pivot_wider(
+    names_from = disposition,
+    values_from = n
+  )|>
+  mutate(total_homicides=`Closed by arrest` + `Closed without arrest` + `Open/No arrest`)|>
+  mutate(unsolved_homicides=`Closed without arrest` + `Open/No arrest`)|>
+  mutate(prop=unsolved_homicides/total_homicides)
+
+
+prop.test(1825,2827)|>
+  tidy()|>
+  select(estimate,conf.low, conf.high )
+
+```
+
+```{r}
+source("prop_test.R")
+new=prop_test("Baltimore,MD")
+
+
+city_name_homicides=
+  homicides_city|>
+  distinct(city_state)
+
+
+prop_test_all=
+  expand_grid(
+  city_name_homicides,
+)|>
+  mutate(
+    city_prop=map(city_state,prop_test)
+  )|>
+  unnest(city_prop)
+  
+prop_test_all=select(prop_test_all,city_state, prop, estimate,conf.low, conf.high)
+
+```
+
+```{r}
+prop_test_all=
+  prop_test_all|>
+  arrange(prop)|>
+  mutate(city_state = factor(city_state, levels = city_state))
+
+ggplot(prop_test_all, aes(x = city_state, y = estimate)) +
+  geom_point(color = "red", size = 2) +  
+  geom_errorbar(aes(ymin = conf.low, ymax = conf.high), width = 0.3) +
+                              
+  labs(
+    title = "Proportion of Unsolved Homicides by City",
+    x = "City",
+    y = "Estimated Proportion (with 95% CI)"
+  ) +
+  theme_minimal(base_size = 12)
 ```
 
