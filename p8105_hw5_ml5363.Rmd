@@ -171,7 +171,7 @@ prop.test(1825,2827)|>
 
 ```{r}
 source("prop_test.R")
-new=prop_test("Baltimore,MD")
+
 
 
 city_name_homicides=
@@ -190,6 +190,7 @@ prop_test_all=
   
 prop_test_all=select(prop_test_all,city_state, prop, estimate,conf.low, conf.high)
 
+prop_test_all
 ```
 
 ```{r}
@@ -201,7 +202,7 @@ prop_test_all=
 ggplot(prop_test_all, aes(x = city_state, y = estimate)) +
   geom_point(color = "red", size = 2) +  
   geom_errorbar(aes(ymin = conf.low, ymax = conf.high), width = 0.3) +
-                              
+  coord_flip() +                            
   labs(
     title = "Proportion of Unsolved Homicides by City",
     x = "City",
